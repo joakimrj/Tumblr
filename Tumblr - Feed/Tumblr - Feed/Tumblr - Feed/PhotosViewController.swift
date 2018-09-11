@@ -11,6 +11,9 @@ import AlamofireImage
 class PhotosViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
  
     var posts: [[String: Any]] = []
+    var refreshControl: UIRefreshControl!
+    
+    let alertController = UIAlertController(title: "Error", message: "Can not connect to internet. Check connection and try again.", preferredStyle: .alert)
     
     @IBOutlet var tableView: UITableView!
     
@@ -18,8 +21,34 @@ class PhotosViewController: UIViewController, UITableViewDataSource, UITableView
     override func viewDidLoad() {
         super.viewDidLoad()
         
-       
+        // create a cancel action
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel) { (action) in
+            // handle cancel response here. Doing nothing will dismiss the view.
+            self.refreshControl.endRefreshing()
+        }
+        // add the cancel action to the alertController
+        alertController.addAction(cancelAction)
         
+        // create an OK action
+        let OKAction = UIAlertAction(title: "Try Again", style: .default) { (action) in
+            // handle response here.
+            self.fetchImages()
+        }
+        // add the OK action to the alert controller
+        alertController.addAction(OKAction)
+        
+        refreshControl = UIRefreshControl()
+        refreshControl.addTarget(self, action:  #selector(PhotosViewController.didPullToRefresh(_:)), for: .valueChanged)
+        tableView.insertSubview(refreshControl, at: 0)
+        
+        fetchImages()
+
+    }
+    @objc func didPullToRefresh(_ refreshControl: UIRefreshControl){
+        fetchImages()
+    }
+    
+    func fetchImages(){
         // Network request snippet
         let url = URL(string: "https://api.tumblr.com/v2/blog/humansofnewyork.tumblr.com/posts/photo?api_key=Q6vHoaVm5L1u2ZAW1fqv3Jw48gFzYVg9P0vH0VHl3GVy6quoGV")!
         let session = URLSession(configuration: .default, delegate: nil, delegateQueue: OperationQueue.main)
@@ -27,6 +56,9 @@ class PhotosViewController: UIViewController, UITableViewDataSource, UITableView
         let task = session.dataTask(with: url) { (data, response, error) in
             if let error = error {
                 print(error.localizedDescription)
+                self.present(self.alertController, animated: true) {
+                    // optional code for what happens after the alert controller has finished presenting
+                }
             } else if let data = data,
                 let dataDictionary = try! JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
                 print(dataDictionary)
@@ -42,6 +74,7 @@ class PhotosViewController: UIViewController, UITableViewDataSource, UITableView
                 self.tableView.delegate = self
                 self.tableView.dataSource = self
                 self.tableView.reloadData()
+                self.refreshControl.endRefreshing()
             }
         }
         task.resume()
