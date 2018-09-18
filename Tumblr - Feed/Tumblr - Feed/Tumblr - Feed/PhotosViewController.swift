@@ -10,6 +10,7 @@ import AlamofireImage
 
 class PhotosViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
  
+
     var posts: [[String: Any]] = []
     var refreshControl: UIRefreshControl!
     
@@ -44,6 +45,17 @@ class PhotosViewController: UIViewController, UITableViewDataSource, UITableView
         fetchImages()
 
     }
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        let vc = segue.destination as! PhotoDetailsViewController
+        let cell = sender as! PhotoCell
+        //let indexPath = tableView.indexPath(for: cell)!
+    
+        //let imageViewImage = posts[indexPath.row]
+        vc.image = cell.photoImageView.image
+    }
+    
+    
+    
     @objc func didPullToRefresh(_ refreshControl: UIRefreshControl){
         fetchImages()
     }
@@ -86,13 +98,74 @@ class PhotosViewController: UIViewController, UITableViewDataSource, UITableView
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return 1
+    }
+    func numberOfSections(in tableView: UITableView) -> Int {
+        
         return posts.count
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+            tableView.deselectRow(at: indexPath, animated: true)
+    }
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        let headerView = UIView(frame: CGRect(x: 0, y: 0, width: 320, height: 50))
+        headerView.backgroundColor = UIColor(white: 1, alpha: 0.9)
+        
+        let profileView = UIImageView(frame: CGRect(x: 10, y: 10, width: 30, height: 30))
+        profileView.clipsToBounds = true
+        profileView.layer.cornerRadius = 15;
+        profileView.layer.borderColor = UIColor(white: 0.7, alpha: 0.8).cgColor
+        profileView.layer.borderWidth = 1;
+        
+        // Set the avatar
+        profileView.af_setImage(withURL: URL(string: "https://api.tumblr.com/v2/blog/humansofnewyork.tumblr.com/avatar")!)
+        headerView.addSubview(profileView)
+        
+        // Add a UILabel for the date here
+        let label = UILabel(frame: CGRect(x: 50, y: 10, width: 400, height: 21))
+        //label.center = CGPointMake(160, 284)
+        //label.textAlignment = NSTextAlignment.Center
+        // Store the returned array of dictionaries in our posts property
+        let onePost = self.posts[section]
+        let date = onePost["date"]
+
+        if let date2 = date {
+         /*
+            let formatter = DateFormatter()
+             let yourDate = formatter.date(from: "\(date2)")
+            formatter.dateStyle = DateFormatter.Style.long
+            formatter.timeStyle = .medium
+           
+            let dateString = formatter.string(from: yourDate!)*/
+            label.text = "\(date2)"
+        } else {
+            //Here display something if no date is available
+        }
+      /*
+        let formatter = NSDateFormatter()
+        formatter.dateStyle = NSDateFormatterStyle.LongStyle
+        formatter.timeStyle = .MediumStyle
+        
+        let dateString = formatter.stringFromDate(date)
+    */
+    //    label.text = String(describing: date)
+        headerView.addSubview(label)
+      //  var date = UILabel()
+       // date.text = posts[section].index(forKey: "date") as String?
+        // Use the section number to get the right URL
+        // let label = ...
+        
+        return headerView
+    }
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        return 30
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "PhotoCell", for: indexPath) as! PhotoCell
         
-        let post = posts[indexPath.row]
+        let post = posts[indexPath.section]
         if let photos = post["photos"] as? [[String: Any]] {
             // 1.
             let photo = photos[0]
